@@ -1,20 +1,45 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AiService } from './ai.service';
 
-const getRecommendations = async (req: Request, res: Response) => {
+const getRecommendations = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { preferences } = req.body;
-        const result = await AiService.getEventRecommendations(preferences || "music and tech");
+        const result = await AiService.getEventRecommendations(preferences);
         res.status(200).json({
             success: true,
-            message: "AI Recommendations retrieved",
             data: result
         });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "AI Request failed", error });
+    } catch (error: any) {
+        console.error("[AiController] Recommendation Error:", error?.message || error);
+        next(error);
+    }
+};
+
+const chatWithAI = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { message, history } = req.body;
+
+        if (!message) {
+            return res.status(400).json({
+                success: false,
+                message: "Message is required"
+            });
+        }
+
+        const response = await AiService.getChatResponse(message, history || []);
+
+        res.status(200).json({
+            success: true,
+            message: "AI response generated",
+            data: response
+        });
+    } catch (error: any) {
+        console.error("[AiController] Chat Error:", error?.message || error);
+        next(error);
     }
 };
 
 export const AiController = {
-    getRecommendations
+    getRecommendations,
+    chatWithAI
 };

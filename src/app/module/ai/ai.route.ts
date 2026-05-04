@@ -3,6 +3,7 @@ import { AiController } from './ai.controller';
 
 const router = express.Router();
 
-router.post('/recommend', AiController.getRecommendations);
+router.post('/recommendations', AiController.getRecommendations);
+router.post('/chat', AiController.chatWithAI);
 
 export const AiRoutes = router;

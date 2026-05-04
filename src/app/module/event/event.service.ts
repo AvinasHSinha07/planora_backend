@@ -10,8 +10,12 @@ const createEvent = async (data: any) => {
 };
 
 const getAllEvents = async (query: any) => {
-    const { searchTerm, category, type, limit } = query;
+    const { searchTerm, category, type, limit, page, organizerId } = query;
     const where: any = {};
+
+    if (organizerId) {
+        where.organizerId = organizerId;
+    }
 
     if (searchTerm) {
         where.OR = [
@@ -34,37 +38,53 @@ const getAllEvents = async (query: any) => {
         }
     }
 
-    const result = await prisma.event.findMany({
-        where,
-        include: {
-            category: true,
-            organizer: {
-                select: {
-                    id: true,
-                    name: true,
-                    avatar: true,
-                    image: true,
-                }
-            },
-            participants: {
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            avatar: true,
-                            image: true
+    const take = limit ? Number(limit) : 10;
+    const skip = page ? (Number(page) - 1) * take : 0;
+
+    const [result, total] = await Promise.all([
+        prisma.event.findMany({
+            where,
+            include: {
+                category: true,
+                organizer: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatar: true,
+                        image: true,
+                    }
+                },
+                participants: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                avatar: true,
+                                image: true
+                            }
                         }
                     }
                 }
+            },
+            take,
+            skip,
+            orderBy: {
+                date: 'asc'
             }
-        },
-        take: limit ? Number(limit) : undefined,
-        orderBy: {
-            date: 'asc'
+        }),
+        prisma.event.count({ where })
+    ]);
+
+    return {
+        events: result,
+        meta: {
+            total,
+            page: page ? Number(page) : 1,
+            limit: take,
+            totalPages: Math.ceil(total / take)
         }
-    });
-    return result;
+    };
 };
 
 const getEventById = async (id: string) => {
