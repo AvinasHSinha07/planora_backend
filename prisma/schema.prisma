@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum EventType {
+  PUBLIC_FREE
+  PUBLIC_PAID
+  PRIVATE_FREE
+  PRIVATE_PAID
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BANNED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  emailVerified Boolean  @default(false)
+  image         String?
+  passwordHash  String?
+  avatar        String?
+  role          Role     @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  events              Event[]            @relation("EventOrganizer")
+  participations      EventParticipant[]
+  invitationsSent     Invitation[]       @relation("Inviter")
+  invitationsReceived Invitation[]       @relation("Invitee")
+  payments            Payment[]
+  reviews             Review[]
+  notifications       Notification[]
+  approvalRequests    ApprovalRequest[]
+  bans                BanList[]
+
+  sessions Session[]
+  accounts Account[]
+}
+
+model EventCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events Event[]
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  bannerImage String?
+  date        DateTime
+  venue       String?
+  eventLink   String?
+  fee         Float     @default(0.0)
+  eventType   EventType
+  isFeatured  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  organizerId String
+  organizer   User   @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   EventCategory @relation(fields: [categoryId], references: [id])
+
+  participants     EventParticipant[]
+  invitations      Invitation[]
+  payments         Payment[]
+  reviews          Review[]
+  approvalRequests ApprovalRequest[]
+  bans             BanList[]
+}
+
+model EventParticipant {
+  id       String            @id @default(uuid())
+  status   ParticipantStatus @default(PENDING)
+  joinedAt DateTime          @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model Invitation {
+  id        String            @id @default(uuid())
+  status    ParticipantStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  inviterId String
+  inviter   User   @relation("Inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  inviteeId String
+  invitee   User   @relation("Invitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, inviteeId])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  amount          Float
+  stripeSessionId String?       @unique
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ApprovalRequest {
+  id        String            @id @default(uuid())
+  status    ParticipantStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model BanList {
+  id        String   @id @default(uuid())
+  reason    String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+}
