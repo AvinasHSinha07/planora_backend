@@ -53,7 +53,8 @@ const getMyInvitations = async (userId: string) => {
                     organizer: {
                         select: {
                             name: true,
-                            avatar: true
+                            avatar: true,
+                            image: true
                         }
                     }
                 }
@@ -61,7 +62,8 @@ const getMyInvitations = async (userId: string) => {
             inviter: {
                 select: {
                     name: true,
-                    avatar: true
+                    avatar: true,
+                    image: true
                 }
             }
         }

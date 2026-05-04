@@ -10,6 +10,7 @@ const getAllUsers = async () => {
             name: true,
             role: true,
             avatar: true,
+            image: true,
             createdAt: true,
         }
     });
@@ -25,6 +26,7 @@ const getUserById = async (id: string) => {
             name: true,
             role: true,
             avatar: true,
+            image: true,
             createdAt: true,
         }
     });
@@ -74,14 +76,24 @@ const getUserDashboardStats = async (userId: string) => {
 };
 
 const updateProfile = async (id: string, payload: { name?: string; avatar?: string }) => {
+    // Build the data object — write avatar URL to both `image` (Better Auth session field)
+    // and `avatar` (custom field) so the session reflects changes immediately on reload.
+    const data: Record<string, any> = {};
+    if (payload.name !== undefined) data.name = payload.name;
+    if (payload.avatar !== undefined) {
+        data.avatar = payload.avatar;
+        data.image  = payload.avatar; // Keep Better Auth session in sync
+    }
+
     const result = await prisma.user.update({
         where: { id },
-        data: payload,
+        data,
         select: {
             id: true,
             email: true,
             name: true,
             avatar: true,
+            image: true,
             role: true
         }
     });

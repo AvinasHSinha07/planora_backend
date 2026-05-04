@@ -74,7 +74,7 @@ const updateParticipantStatus = async (participantId: string, newStatus: "APPROV
 const getEventParticipants = async (eventId: string) => {
     const result = await prisma.eventParticipant.findMany({
         where: { eventId },
-        include: { user: { select: { id: true, name: true, email: true, avatar: true } } }
+        include: { user: { select: { id: true, name: true, email: true, avatar: true, image: true } } }
     });
     return result;
 };
@@ -89,13 +89,14 @@ const getMyParticipations = async (userId: string) => {
                     organizer: {
                         select: {
                             name: true,
-                            avatar: true
+                            avatar: true,
+                            image: true
                         }
                     }
                 }
             }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { joinedAt: 'desc' }
     });
     return result;
 };

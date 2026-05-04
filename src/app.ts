@@ -13,9 +13,9 @@ const app: Application = express();
 const SELF_ASSIGNABLE_ROLES = new Set(['USER', 'ORGANIZER']);
 
 // CORS (must be before parsers for preflight OPTIONS handling)
+const envOrigins = process.env.CLIENT_URL?.split(',') || [];
 const allowedOrigins = [
-  process.env.CLIENT_URL?.replace(/\/$/, '') || 'http://localhost:3000',
-  process.env.CLIENT_URL || 'http://localhost:3000',
+  ...envOrigins.map(url => url.trim().replace(/\/$/, '')),
   'http://localhost:3000'
 ];
 

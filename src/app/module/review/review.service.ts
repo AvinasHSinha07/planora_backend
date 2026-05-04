@@ -27,7 +27,23 @@ const createReview = async (userId: string, eventId: string, payload: { rating: 
 const getEventReviews = async (eventId: string) => {
     const result = await prisma.review.findMany({
         where: { eventId },
-        include: { user: { select: { id: true, name: true, avatar: true } } },
+        include: { user: { select: { id: true, name: true, avatar: true, image: true } } },
+        orderBy: { createdAt: 'desc' }
+    });
+    return result;
+};
+
+const getMyReviews = async (organizerId: string) => {
+    const result = await prisma.review.findMany({
+        where: {
+            event: {
+                organizerId
+            }
+        },
+        include: {
+            user: { select: { id: true, name: true, avatar: true, image: true } },
+            event: { select: { id: true, title: true } }
+        },
         orderBy: { createdAt: 'desc' }
     });
     return result;
@@ -36,4 +52,5 @@ const getEventReviews = async (eventId: string) => {
 export const ReviewService = {
     createReview,
     getEventReviews,
+    getMyReviews,
 };

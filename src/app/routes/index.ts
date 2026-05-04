@@ -9,6 +9,7 @@ import { AdminRoutes } from '../module/admin/admin.route';
 import { AiRoutes } from '../module/ai/ai.route';
 import { CategoryRoutes } from '../module/category/category.route';
 import { InvitationRoutes } from '../module/invitation/invitation.route';
+import { UploadRoutes } from '../module/upload/upload.route';
 
 const router = express.Router();
 
@@ -52,6 +53,10 @@ const moduleRoutes = [
     {
         path: '/invitations',
         route: InvitationRoutes
+    },
+    {
+        path: '/upload',
+        route: UploadRoutes
     }
 ];
 

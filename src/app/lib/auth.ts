@@ -61,6 +61,11 @@ export const auth = betterAuth({
                 required: true,
                 defaultValue: Role.USER,
             },
+            avatar: {
+                type: "string",
+                required: false,
+                defaultValue: "",
+            },
         },
     },
     plugins: [
@@ -70,7 +75,7 @@ export const auth = betterAuth({
         expiresIn: sessionExpiresIn,
         updateAge: sessionUpdateAge,
         cookieCache: {
-            enabled: true,
+            enabled: isProduction, // Disable cache in development to see DB changes immediately
             maxAge: sessionExpiresIn,
         },
     },

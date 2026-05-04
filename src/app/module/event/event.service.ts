@@ -43,9 +43,21 @@ const getAllEvents = async (query: any) => {
                     id: true,
                     name: true,
                     avatar: true,
+                    image: true,
                 }
             },
-            participants: true
+            participants: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            avatar: true,
+                            image: true
+                        }
+                    }
+                }
+            }
         },
         take: limit ? Number(limit) : undefined,
         orderBy: {
@@ -65,15 +77,28 @@ const getEventById = async (id: string) => {
                     id: true,
                     name: true,
                     avatar: true,
+                    image: true,
                 }
             },
-            participants: true,
+            participants: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            avatar: true,
+                            image: true
+                        }
+                    }
+                }
+            },
             reviews: {
                 include: {
                     user: {
                         select: {
                             name: true,
-                            avatar: true
+                            avatar: true,
+                            image: true
                         }
                     }
                 }
@@ -96,7 +121,8 @@ const getEventById = async (id: string) => {
             organizer: {
                 select: {
                     name: true,
-                    avatar: true
+                    avatar: true,
+                    image: true
                 }
             }
         }
@@ -154,7 +180,8 @@ const getEventManagementData = async (eventId: string, userId: string) => {
                             id: true,
                             name: true,
                             email: true,
-                            avatar: true
+                            avatar: true,
+                            image: true
                         }
                     }
                 }
@@ -166,7 +193,8 @@ const getEventManagementData = async (eventId: string, userId: string) => {
                             id: true,
                             name: true,
                             email: true,
-                            avatar: true
+                            avatar: true,
+                            image: true
                         }
                     }
                 }
