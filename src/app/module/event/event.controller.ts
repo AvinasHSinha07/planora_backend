@@ -99,11 +99,25 @@ const getManagementData = async (req: Request, res: Response) => {
     }
 };
 
+const toggleFeatured = async (req: Request, res: Response) => {
+    try {
+        const result = await EventService.toggleFeatured(req.params.id as string);
+        res.status(200).json({
+            success: true,
+            message: "Event featured status updated",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to toggle featured status", error });
+    }
+};
+
 export const EventController = {
     createEvent,
     getAllEvents,
     getEventById,
     updateEvent,
     deleteEvent,
-    getManagementData
+    getManagementData,
+    toggleFeatured
 };

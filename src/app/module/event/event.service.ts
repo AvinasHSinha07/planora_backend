@@ -10,8 +10,14 @@ const createEvent = async (data: any) => {
 };
 
 const getAllEvents = async (query: any) => {
-    const { searchTerm, category, type, limit, page, organizerId, status: eventStatus } = query;
+    const { searchTerm, category, type, limit, page, organizerId, status: eventStatus, isFeatured } = query;
     const where: any = {};
+
+    if (isFeatured === 'true') {
+        where.isFeatured = true;
+    } else if (isFeatured === 'false') {
+        where.isFeatured = false;
+    }
 
     if (eventStatus === 'upcoming') {
         where.date = { gte: new Date() };
@@ -35,12 +41,18 @@ const getAllEvents = async (query: any) => {
         where.category = { name: category };
     }
 
-    if (type && type !== 'all') {
-        const types = type.split(',');
-        if (types.length > 1) {
-            where.eventType = { in: types };
+    if (type && type !== 'ALL') {
+        if (type === 'FREE') {
+            where.eventType = { in: ['PUBLIC_FREE', 'PRIVATE_FREE'] };
+        } else if (type === 'PAID') {
+            where.eventType = { in: ['PUBLIC_PAID', 'PRIVATE_PAID'] };
         } else {
-            where.eventType = type;
+            const types = type.split(',');
+            if (types.length > 1) {
+                where.eventType = { in: types };
+            } else {
+                where.eventType = type;
+            }
         }
     }
 
@@ -234,11 +246,23 @@ const getEventManagementData = async (eventId: string, userId: string) => {
     return event;
 };
 
+const toggleFeatured = async (eventId: string) => {
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) throw new AppError(status.NOT_FOUND, "Event not found");
+
+    const result = await prisma.event.update({
+        where: { id: eventId },
+        data: { isFeatured: !event.isFeatured }
+    });
+    return result;
+};
+
 export const EventService = {
     createEvent,
     getAllEvents,
     getEventById,
     updateEvent,
     deleteEvent,
-    getEventManagementData
+    getEventManagementData,
+    toggleFeatured
 };

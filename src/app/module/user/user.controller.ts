@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 
 const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const result = await UserService.getAllUsers();
+        const result = await UserService.getAllUsers(req.query);
         res.status(200).json({
             success: true,
             message: "Users retrieved successfully",
@@ -30,7 +30,15 @@ const getUserById = async (req: Request, res: Response) => {
 const getDashboardStats = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const result = await UserService.getUserDashboardStats(userId);
+        const userRole = (req as any).user.role;
+        
+        let result;
+        if (userRole === 'ADMIN') {
+            result = await UserService.getGlobalStats();
+        } else {
+            result = await UserService.getUserDashboardStats(userId);
+        }
+
         res.status(200).json({
             success: true,
             message: "Dashboard stats retrieved successfully",
@@ -55,9 +63,38 @@ const updateProfile = async (req: Request, res: Response) => {
     }
 };
 
+const changeUserRole = async (req: Request, res: Response) => {
+    try {
+        const { userId, role } = req.body;
+        const result = await UserService.changeUserRole(userId, role);
+        res.status(200).json({
+            success: true,
+            message: "User role updated successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to update role", error });
+    }
+};
+
+const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const result = await UserService.deleteUser(req.params.id as string);
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to delete user", error });
+    }
+};
+
 export const UserController = {
     getAllUsers,
     getUserById,
     getDashboardStats,
     updateProfile,
+    changeUserRole,
+    deleteUser,
 };
