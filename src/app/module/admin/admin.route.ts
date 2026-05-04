@@ -5,6 +5,7 @@ import requireAuth from '../../middleware/auth';
 const router = express.Router();
 
 router.get('/stats', requireAuth('ADMIN'), AdminController.getStats);
+router.get('/revenue', requireAuth('ADMIN'), AdminController.getRevenueAnalytics);
 router.get('/users', requireAuth('ADMIN'), AdminController.getUsers);
 router.get('/events', requireAuth('ADMIN'), AdminController.getEvents);
 router.delete('/users/:id', requireAuth('ADMIN'), AdminController.deleteUser);

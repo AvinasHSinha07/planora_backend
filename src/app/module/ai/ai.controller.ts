@@ -39,7 +39,35 @@ const chatWithAI = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
+const architectEvent = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { bullets } = req.body;
+        const result = await AiService.architectEvent(bullets);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+const generateTags = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { description } = req.body;
+        const result = await AiService.suggestTags(description);
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error: any) {
+        next(error);
+    }
+};
+
 export const AiController = {
     getRecommendations,
-    chatWithAI
+    chatWithAI,
+    architectEvent,
+    generateTags
 };

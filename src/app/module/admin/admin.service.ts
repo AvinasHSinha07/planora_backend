@@ -57,8 +57,33 @@ const getAllEvents = async () => {
     });
 };
 
+const getRevenueStats = async () => {
+    const [totalPayments, refundedPayments, completedPayments] = await Promise.all([
+        prisma.payment.count(),
+        prisma.payment.count({ where: { status: 'REFUNDED' } }),
+        prisma.payment.findMany({ 
+            where: { status: 'COMPLETED' },
+            select: { amount: true }
+        })
+    ]);
+
+    const grossVolume = completedPayments.reduce((acc, p) => acc + p.amount, 0);
+    const platformCommission = grossVolume * 0.10; // 10% platform fee
+    const refundRate = totalPayments > 0 ? (refundedPayments / totalPayments) * 100 : 0;
+
+    return {
+        grossVolume,
+        platformCommission,
+        refundRate: Number(refundRate.toFixed(2)),
+        totalTransactions: totalPayments,
+        completedTransactions: completedPayments.length,
+        refundedTransactions: refundedPayments
+    };
+};
+
 export const AdminService = {
     getPlatformStats,
+    getRevenueStats,
     getAllUsers,
     getAllEvents,
     deleteUser,

@@ -62,6 +62,7 @@ model Event {
   invitations      Invitation[]
   payments         Payment[]
   reviews          Review[]
+  tags             String?
 }
 
 model EventParticipant {

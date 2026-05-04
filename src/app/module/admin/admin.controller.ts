@@ -55,8 +55,18 @@ const featureEvent = async (req: Request, res: Response, next: NextFunction) => 
     }
 };
 
+const getRevenueAnalytics = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await AdminService.getRevenueStats();
+        res.status(200).json({ success: true, message: "Revenue analytics retrieved", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const AdminController = {
     getStats,
+    getRevenueAnalytics,
     getUsers,
     getEvents,
     deleteUser,

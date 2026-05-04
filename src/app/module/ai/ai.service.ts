@@ -124,10 +124,37 @@ ${liveData}`;
 
 // Use EXACT models from working FoodHub implementation
 const MODEL_FALLBACKS = [
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash-exp',
   'gemini-2.5-flash',
   'gemini-2.0-flash-lite',
   'gemini-flash-latest'
 ];
+
+const generateWithFallback = async (prompt: string, contents?: any[]) => {
+  let lastError: any;
+  for (const modelName of MODEL_FALLBACKS) {
+    try {
+      const model = getGenAI().getGenerativeModel({ model: modelName });
+      if (contents) {
+        const result = await model.generateContent({
+          contents,
+          generationConfig: { maxOutputTokens: 2000, temperature: 0.6 },
+        });
+        return result.response.text();
+      } else {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      }
+    } catch (err: any) {
+      console.error(`[AiService] Model ${modelName} failed:`, err?.message || err);
+      lastError = err;
+      continue;
+    }
+  }
+  throw lastError || new Error("AI service is currently offline.");
+};
 
 // ── Main chat function ─────────────────────────────────────────────────────────
 export const getChatResponse = async (
@@ -155,43 +182,58 @@ export const getChatResponse = async (
     },
   ];
 
-  let lastError: any;
-
-  for (const modelName of MODEL_FALLBACKS) {
-    try {
-      console.log(`[PlanoraBot] Attempting model: ${modelName}`);
-      const model = getGenAI().getGenerativeModel({ model: modelName });
-      const result = await model.generateContent({
-        contents,
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.6,
-        },
-      });
-      return result.response.text();
-    } catch (err: any) {
-      console.error(`[PlanoraBot] Model ${modelName} failed:`, err?.message || err);
-      lastError = err;
-      continue;
-    }
-  }
-
-  throw lastError || new Error("PlanoraBot is currently offline. Please try again later.");
+  return await generateWithFallback("", contents);
 };
 
 export const getEventRecommendations = async (userPreferences: string) => {
     try {
-        const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `Based on the following user preferences: "${userPreferences}", recommend 3 types of event categories and a brief theme for each. Format as JSON.`;
-        
-        const result = await model.generateContent(prompt);
-        return { recommendations: result.response.text() };
+        const text = await generateWithFallback(prompt);
+        return { recommendations: text };
     } catch (error) {
         throw new AppError(status.INTERNAL_SERVER_ERROR, "AI recommendation engine failed");
     }
 };
 
+export const architectEvent = async (bullets: string) => {
+    try {
+        const prompt = `Convert the following bullet points into a professional, premium, and engaging event description for Planora (an elite event platform). 
+        Keep the tone sophisticated and luxury-focused. Use a mix of storytelling and functional details.
+        
+        CRITICAL: Do NOT use bullet points in the output. Use cohesive, well-structured paragraphs only.
+        
+        BULLETS:
+        ${bullets}
+        
+        DESCRIPTION:`;
+        
+        const text = await generateWithFallback(prompt);
+        return { description: text };
+    } catch (error) {
+        throw new AppError(status.INTERNAL_SERVER_ERROR, "AI Architect failed to generate description");
+    }
+};
+
+export const suggestTags = async (description: string) => {
+    try {
+        const prompt = `Based on the following event description, suggest 5-8 SEO-friendly hashtags or tags. 
+        Format them as a comma-separated list of tags without the # symbol. Only output the tags.
+        
+        DESCRIPTION:
+        ${description}
+        
+        TAGS:`;
+        
+        const text = await generateWithFallback(prompt);
+        return { tags: text.trim() };
+    } catch (error) {
+        throw new AppError(status.INTERNAL_SERVER_ERROR, "AI Tagging engine failed");
+    }
+};
+
 export const AiService = {
     getEventRecommendations,
-    getChatResponse
+    getChatResponse,
+    architectEvent,
+    suggestTags
 };

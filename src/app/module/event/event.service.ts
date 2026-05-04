@@ -1,12 +1,18 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../lib/prisma"; // Trigger reload for prisma generate
 import AppError from "../../errorHelpers/AppError";
 import status from "http-status";
 
 const createEvent = async (data: any) => {
-    const result = await prisma.event.create({
-        data,
-    });
-    return result;
+    try {
+        console.log("[EventService] Creating event with data:", JSON.stringify(data, null, 2));
+        const result = await prisma.event.create({
+            data,
+        });
+        return result;
+    } catch (error: any) {
+        console.error("[EventService] Create Event Error:", error);
+        throw error;
+    }
 };
 
 const getAllEvents = async (query: any) => {
