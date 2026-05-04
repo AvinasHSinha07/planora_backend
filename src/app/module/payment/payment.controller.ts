@@ -3,15 +3,20 @@ import { PaymentService } from './payment.service';
 
 const createSession = async (req: Request, res: Response) => {
     try {
-        const { eventId, userId } = req.body;
+        const { eventId } = req.body;
+        const userId = (req as any).user.id;
         const result = await PaymentService.createPaymentSession(eventId, userId);
         res.status(200).json({
             success: true,
             message: "Payment session created",
             data: result
         });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Failed to create payment session", error });
+    } catch (error: any) {
+        res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || "Failed to create payment session", 
+            error 
+        });
     }
 };
 

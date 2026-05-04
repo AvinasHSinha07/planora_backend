@@ -3,11 +3,11 @@ import { NotificationService } from './notification.service';
 
 const getUserNotifications = async (req: Request, res: Response) => {
     try {
-        const userId = req.body.userId || req.params.userId; // Mocked auth
-        const result = await NotificationService.getUserNotifications(userId as string);
+        const userId = (req as any).user.id;
+        const result = await NotificationService.getUserNotifications(userId);
         res.status(200).json({
             success: true,
-            message: "Notifications retrieved",
+            message: "Notifications retrieved successfully",
             data: result
         });
     } catch (error: any) {

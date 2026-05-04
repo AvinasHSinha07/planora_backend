@@ -6,9 +6,10 @@ import { Role } from '@prisma/client';
 
 const router = express.Router();
 
-router.post('/', requireAuth(Role.USER, Role.ORGANIZER), EventController.createEvent);
+router.post('/', requireAuth(Role.USER, Role.ORGANIZER, Role.ADMIN), EventController.createEvent);
 router.get('/', EventController.getAllEvents);
 router.get('/:id', EventController.getEventById);
+router.get('/:id/management', requireAuth(Role.ORGANIZER, Role.ADMIN), EventController.getManagementData);
 router.patch('/:id', requireAuth(Role.USER, Role.ORGANIZER, Role.ADMIN), EventController.updateEvent);
 router.delete('/:id', requireAuth(Role.USER, Role.ORGANIZER, Role.ADMIN), EventController.deleteEvent);
 

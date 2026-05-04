@@ -36,33 +36,63 @@ async function main() {
 
   // 2. Create Admin User
   const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminId = 'f8e3b97a-b6f5-42a4-a273-ad1d8c13f883'; // Fixed ID from user's data
   const admin = await prisma.user.upsert({
     where: { email: 'admin@planora.com' },
     update: {},
     create: {
+      id: adminId,
       email: 'admin@planora.com',
       name: 'Planora Admin',
-      passwordHash: adminPassword,
       role: 'ADMIN',
       emailVerified: true,
     },
   });
-  console.log('Admin user created');
+
+  await prisma.account.upsert({
+    where: { id: 'admin-account-id' },
+    update: { password: adminPassword },
+    create: {
+      id: 'admin-account-id',
+      userId: admin.id,
+      accountId: 'admin@planora.com',
+      providerId: 'email',
+      password: adminPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+  console.log('Admin user and account created');
 
   // 3. Create Organizer User
   const organizerPassword = await bcrypt.hash('organizer123', 10);
+  const organizerId = 'c6cbccc0-5879-43d3-bd5a-45011a0da8fc'; // Fixed ID from user's data
   const organizer = await prisma.user.upsert({
     where: { email: 'organizer@planora.com' },
     update: {},
     create: {
+      id: organizerId,
       email: 'organizer@planora.com',
       name: 'Event Organizer',
-      passwordHash: organizerPassword,
       role: 'ORGANIZER',
       emailVerified: true,
     },
   });
-  console.log('Organizer user created');
+
+  await prisma.account.upsert({
+    where: { id: 'organizer-account-id' },
+    update: { password: organizerPassword },
+    create: {
+      id: 'organizer-account-id',
+      userId: organizer.id,
+      accountId: 'organizer@planora.com',
+      providerId: 'email',
+      password: organizerPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+  console.log('Organizer user and account created');
 
   // 4. Create Some Events
   const events = [

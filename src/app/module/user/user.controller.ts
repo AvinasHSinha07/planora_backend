@@ -41,8 +41,23 @@ const getDashboardStats = async (req: Request, res: Response) => {
     }
 };
 
+const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await UserService.updateProfile(userId, req.body);
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to update profile", error });
+    }
+};
+
 export const UserController = {
     getAllUsers,
     getUserById,
     getDashboardStats,
+    updateProfile,
 };

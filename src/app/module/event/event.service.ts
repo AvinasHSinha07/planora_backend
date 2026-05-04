@@ -10,7 +10,7 @@ const createEvent = async (data: any) => {
 };
 
 const getAllEvents = async (query: any) => {
-    const { searchTerm, category, type } = query;
+    const { searchTerm, category, type, limit } = query;
     const where: any = {};
 
     if (searchTerm) {
@@ -26,7 +26,12 @@ const getAllEvents = async (query: any) => {
     }
 
     if (type && type !== 'all') {
-        where.eventType = type;
+        const types = type.split(',');
+        if (types.length > 1) {
+            where.eventType = { in: types };
+        } else {
+            where.eventType = type;
+        }
     }
 
     const result = await prisma.event.findMany({
@@ -39,7 +44,12 @@ const getAllEvents = async (query: any) => {
                     name: true,
                     avatar: true,
                 }
-            }
+            },
+            participants: true
+        },
+        take: limit ? Number(limit) : undefined,
+        orderBy: {
+            date: 'asc'
         }
     });
     return result;
@@ -58,16 +68,57 @@ const getEventById = async (id: string) => {
                 }
             },
             participants: true,
-            reviews: true
+            reviews: {
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            avatar: true
+                        }
+                    }
+                }
+            }
         }
     });
+
     if (!result) {
         throw new AppError(status.NOT_FOUND, "Event not found");
     }
-    return result;
+
+    const relatedEvents = await prisma.event.findMany({
+        where: {
+            categoryId: result.categoryId,
+            id: { not: result.id }
+        },
+        take: 3,
+        include: {
+            category: true,
+            organizer: {
+                select: {
+                    name: true,
+                    avatar: true
+                }
+            }
+        }
+    });
+
+    return {
+        ...result,
+        relatedEvents
+    };
 };
 
-const updateEvent = async (id: string, payload: any) => {
+const updateEvent = async (id: string, payload: any, userId: string, userRole: string) => {
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+        throw new AppError(status.NOT_FOUND, "Event not found");
+    }
+
+    // Only owner or admin can update
+    if (event.organizerId !== userId && userRole !== 'ADMIN') {
+        throw new AppError(status.FORBIDDEN, "You do not have permission to update this event");
+    }
+
     const result = await prisma.event.update({
         where: { id },
         data: payload,
@@ -75,11 +126,58 @@ const updateEvent = async (id: string, payload: any) => {
     return result;
 };
 
-const deleteEvent = async (id: string) => {
+const deleteEvent = async (id: string, userId: string, userRole: string) => {
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+        throw new AppError(status.NOT_FOUND, "Event not found");
+    }
+
+    // Only owner or admin can delete
+    if (event.organizerId !== userId && userRole !== 'ADMIN') {
+        throw new AppError(status.FORBIDDEN, "You do not have permission to delete this event");
+    }
+
     const result = await prisma.event.delete({
         where: { id },
     });
     return result;
+};
+
+const getEventManagementData = async (eventId: string, userId: string) => {
+    const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+            participants: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            avatar: true
+                        }
+                    }
+                }
+            },
+            invitations: {
+                include: {
+                    invitee: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            avatar: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!event) throw new AppError(status.NOT_FOUND, "Event not found");
+    if (event.organizerId !== userId) throw new AppError(status.FORBIDDEN, "Unauthorized");
+
+    return event;
 };
 
 export const EventService = {
@@ -88,4 +186,5 @@ export const EventService = {
     getEventById,
     updateEvent,
     deleteEvent,
+    getEventManagementData
 };

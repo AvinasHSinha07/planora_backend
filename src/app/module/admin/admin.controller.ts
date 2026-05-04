@@ -1,35 +1,65 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { AdminService } from './admin.service';
 
-const getStats = async (req: Request, res: Response) => {
+const getStats = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await AdminService.getPlatformStats();
         res.status(200).json({ success: true, message: "Stats retrieved", data: result });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: "Failed to fetch stats", error });
+    } catch (error) {
+        next(error);
     }
 };
 
-const deleteUser = async (req: Request, res: Response) => {
+const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await AdminService.getAllUsers();
+        res.status(200).json({ success: true, message: "Users retrieved", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getEvents = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await AdminService.getAllEvents();
+        res.status(200).json({ success: true, message: "Events retrieved", data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         await AdminService.deleteUser(req.params.id as string);
         res.status(200).json({ success: true, message: "User deleted" });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: "Failed to delete user", error });
+    } catch (error) {
+        next(error);
     }
 };
 
-const featureEvent = async (req: Request, res: Response) => {
+const deleteEvent = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await AdminService.deleteEvent(req.params.id as string);
+        res.status(200).json({ success: true, message: "Event deleted" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const featureEvent = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await AdminService.featureEvent(req.params.id as string, req.body.isFeatured);
         res.status(200).json({ success: true, message: "Event featured status updated", data: result });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: "Failed to update event", error });
+    } catch (error) {
+        next(error);
     }
 };
 
 export const AdminController = {
     getStats,
+    getUsers,
+    getEvents,
     deleteUser,
+    deleteEvent,
     featureEvent
 };

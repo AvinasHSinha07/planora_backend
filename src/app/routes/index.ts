@@ -8,6 +8,7 @@ import { NotificationRoutes } from '../module/notification/notification.route';
 import { AdminRoutes } from '../module/admin/admin.route';
 import { AiRoutes } from '../module/ai/ai.route';
 import { CategoryRoutes } from '../module/category/category.route';
+import { InvitationRoutes } from '../module/invitation/invitation.route';
 
 const router = express.Router();
 
@@ -47,6 +48,10 @@ const moduleRoutes = [
     {
         path: '/notifications',
         route: NotificationRoutes
+    },
+    {
+        path: '/invitations',
+        route: InvitationRoutes
     }
 ];
 

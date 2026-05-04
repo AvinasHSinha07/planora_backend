@@ -30,8 +30,37 @@ const featureEvent = async (id: string, isFeatured: boolean) => {
     });
 };
 
+const getAllUsers = async () => {
+    return await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            createdAt: true,
+            emailVerified: true,
+            image: true
+        }
+    });
+};
+
+const getAllEvents = async () => {
+    return await prisma.event.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+            organizer: {
+                select: { name: true, email: true }
+            },
+            category: true
+        }
+    });
+};
+
 export const AdminService = {
     getPlatformStats,
+    getAllUsers,
+    getAllEvents,
     deleteUser,
     deleteEvent,
     featureEvent

@@ -41,15 +41,56 @@ const getUserDashboardStats = async (userId: string) => {
         where: { inviteeId: userId, status: 'PENDING' } 
     });
 
+    // For organizers: How many people are attending their events
+    const organizerEvents = await prisma.event.findMany({
+        where: { organizerId: userId },
+        select: {
+            id: true,
+            _count: {
+                select: { participants: true }
+            }
+        }
+    });
+    const totalAttendees = organizerEvents.reduce((acc, curr) => acc + curr._count.participants, 0);
+
+    // Calculate Revenue
+    const eventIds = organizerEvents.map(e => e.id);
+    const revenueData = await prisma.payment.aggregate({
+        where: {
+            eventId: { in: eventIds },
+            status: 'COMPLETED'
+        },
+        _sum: { amount: true }
+    });
+
     return {
         totalEvents,
         totalParticipations,
-        pendingInvitations
+        pendingInvitations,
+        totalAttendees,
+        totalRevenue: revenueData._sum.amount || 0,
+        ticketSales: totalAttendees // Simplified for now
     };
+};
+
+const updateProfile = async (id: string, payload: { name?: string; avatar?: string }) => {
+    const result = await prisma.user.update({
+        where: { id },
+        data: payload,
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            avatar: true,
+            role: true
+        }
+    });
+    return result;
 };
 
 export const UserService = {
     getAllUsers,
     getUserById,
-    getUserDashboardStats
+    getUserDashboardStats,
+    updateProfile
 };

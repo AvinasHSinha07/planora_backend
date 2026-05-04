@@ -3,15 +3,31 @@ import { envVars } from '../../config/env';
 import { prisma } from '../../lib/prisma';
 import AppError from '../../errorHelpers/AppError';
 import status from 'http-status';
+import { NotificationService } from '../notification/notification.service';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-01-27.acacia' as any,
-});
+const stripe = new Stripe(envVars.STRIPE_SECRET_KEY);
 
 const createPaymentSession = async (eventId: string, userId: string) => {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) throw new AppError(status.NOT_FOUND, 'Event not found');
   if (event.fee <= 0) throw new AppError(status.BAD_REQUEST, 'Event is free');
+
+  if (event.organizerId === userId) {
+    throw new AppError(status.BAD_REQUEST, "You are the organizer of this event");
+  }
+
+  const existingParticipant = await prisma.eventParticipant.findUnique({
+    where: {
+      userId_eventId: {
+        userId,
+        eventId
+      }
+    }
+  });
+
+  if (existingParticipant && existingParticipant.status === 'APPROVED') {
+    throw new AppError(status.BAD_REQUEST, "You have already joined this event");
+  }
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -29,7 +45,7 @@ const createPaymentSession = async (eventId: string, userId: string) => {
       },
     ],
     mode: 'payment',
-    success_url: `${envVars.CLIENT_URL}/dashboard/events?payment=success`,
+    success_url: `${envVars.CLIENT_URL}/dashboard/participations?payment=success`,
     cancel_url: `${envVars.CLIENT_URL}/events/${eventId}?payment=cancelled`,
     metadata: {
       eventId,
@@ -51,7 +67,7 @@ const createPaymentSession = async (eventId: string, userId: string) => {
 };
 
 const handleWebhook = async (payload: Buffer, sig: string) => {
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
+  const endpointSecret = envVars.STRIPE_WEBHOOK_SECRET;
   let event;
 
   try {
@@ -89,6 +105,13 @@ const handleWebhook = async (payload: Buffer, sig: string) => {
             status: pStatus,
           }
         });
+
+        // Notify User
+        await NotificationService.createNotification(
+            session.metadata!.userId,
+            "Payment Successful",
+            `Your payment for "${dbEvent?.title}" has been processed. Your participation is now ${pStatus.toLowerCase()}.`
+        );
       });
     }
   }

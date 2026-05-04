@@ -4,8 +4,8 @@ import { ParticipationService } from './participation.service';
 const joinEvent = async (req: Request, res: Response) => {
     try {
         const { eventId } = req.body;
-        // In reality, userId comes from authenticated req.user
-        const userId = req.body.userId; 
+        
+        const userId = (req as any).user.id; 
         
         const result = await ParticipationService.joinEvent(userId, eventId);
         res.status(201).json({
@@ -14,7 +14,11 @@ const joinEvent = async (req: Request, res: Response) => {
             data: result
         });
     } catch (error: any) {
-        res.status(500).json({ success: false, message: "Failed to join event", error });
+        res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || "Failed to join event", 
+            error 
+        });
     }
 };
 
@@ -45,8 +49,37 @@ const getParticipants = async (req: Request, res: Response) => {
     }
 };
 
+const removeParticipant = async (req: Request, res: Response) => {
+    try {
+        const result = await ParticipationService.removeParticipant(req.params.id as string);
+        res.status(200).json({
+            success: true,
+            message: "Participant removed",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to remove participant", error });
+    }
+};
+
+const getMyParticipations = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await ParticipationService.getMyParticipations(userId);
+        res.status(200).json({
+            success: true,
+            message: "My participations retrieved",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to get participations", error });
+    }
+};
+
 export const ParticipationController = {
     joinEvent,
     updateStatus,
-    getParticipants
+    getParticipants,
+    getMyParticipations,
+    removeParticipant,
 };
