@@ -148,8 +148,79 @@ const verifySession = async (sessionId: string) => {
     return { success: false };
 };
 
+const getMyPayments = async (userId: string) => {
+    const result = await prisma.payment.findMany({
+        where: { userId },
+        include: {
+            event: {
+                include: {
+                    category: true,
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+    return result;
+};
+
+const getOrganizerPayments = async (organizerId: string) => {
+    const result = await prisma.payment.findMany({
+        where: {
+            event: {
+                organizerId
+            }
+        },
+        include: {
+            event: {
+                include: {
+                    category: true,
+                }
+            },
+            user: {
+                select: {
+                    name: true,
+                    email: true,
+                    avatar: true,
+                    image: true,
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+    return result;
+};
+
+const getAllPayments = async () => {
+    const result = await prisma.payment.findMany({
+        include: {
+            event: {
+                include: {
+                    category: true,
+                    organizer: {
+                        select: {
+                            name: true,
+                            email: true,
+                        }
+                    }
+                }
+            },
+            user: {
+                select: {
+                    name: true,
+                    email: true,
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+    return result;
+};
+
 export const PaymentService = {
   createPaymentSession,
   handleWebhook,
   verifySession,
+  getMyPayments,
+  getOrganizerPayments,
+  getAllPayments,
 };

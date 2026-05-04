@@ -45,8 +45,52 @@ const verifySession = async (req: Request, res: Response) => {
     }
 };
 
+const getMyPayments = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await PaymentService.getMyPayments(userId);
+        res.status(200).json({
+            success: true,
+            message: "Payments retrieved successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to retrieve payments", error });
+    }
+};
+
+const getOrganizerPayments = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await PaymentService.getOrganizerPayments(userId);
+        res.status(200).json({
+            success: true,
+            message: "Organizer payments retrieved successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to retrieve organizer payments", error });
+    }
+};
+
+const getAllPayments = async (req: Request, res: Response) => {
+    try {
+        const result = await PaymentService.getAllPayments();
+        res.status(200).json({
+            success: true,
+            message: "All payments retrieved successfully",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to retrieve all payments", error });
+    }
+};
+
 export const PaymentController = {
     createSession,
     handleWebhook,
-    verifySession
+    verifySession,
+    getMyPayments,
+    getOrganizerPayments,
+    getAllPayments,
 };
