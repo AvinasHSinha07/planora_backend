@@ -27,8 +27,17 @@ const markAsRead = async (id: string) => {
     return result;
 };
 
+const markAllAsRead = async (userId: string) => {
+    const result = await prisma.notification.updateMany({
+        where: { userId, isRead: false },
+        data: { isRead: true }
+    });
+    return result;
+};
+
 export const NotificationService = {
     createNotification,
     getUserNotifications,
     markAsRead,
+    markAllAsRead,
 };

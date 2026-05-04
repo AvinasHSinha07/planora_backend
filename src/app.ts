@@ -6,6 +6,7 @@ import { auth } from './app/lib/auth';
 import router from './app/routes';
 import globalErrorHandler from './app/middleware/globalErrorHandler';
 import notFound from './app/middleware/notFound';
+import { PaymentController } from './app/module/payment/payment.controller';
 
 
 console.log('App.ts loading...');
@@ -32,6 +33,7 @@ app.use(cors({
 }));
 
 // Parsers
+app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), PaymentController.handleWebhook);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));

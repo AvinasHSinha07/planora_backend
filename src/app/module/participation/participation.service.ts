@@ -10,6 +10,10 @@ const joinEvent = async (userId: string, eventId: string) => {
     });
     if (!event) throw new AppError(status.NOT_FOUND, "Event not found");
 
+    if (new Date(event.date) < new Date()) {
+        throw new AppError(status.BAD_REQUEST, "This event has already ended");
+    }
+
     if (event.organizerId === userId) {
         throw new AppError(status.BAD_REQUEST, "You are the organizer of this event");
     }
@@ -38,11 +42,14 @@ const joinEvent = async (userId: string, eventId: string) => {
         }
     });
 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError(status.NOT_FOUND, "User not found");
+
     // Notify Organizer
     await NotificationService.createNotification(
         event.organizerId,
         "New Participation Request",
-        `A user has requested to join your event "${event.title}".`
+        `${user.name} has requested to join your event "${event.title}".`
     );
 
     return result;

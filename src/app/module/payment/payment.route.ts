@@ -7,5 +7,6 @@ import { Role } from '@prisma/client';
 const router = express.Router();
 
 router.post('/create-session', requireAuth(Role.USER, Role.ORGANIZER), PaymentController.createSession);
+router.get('/verify-session', requireAuth(Role.USER, Role.ORGANIZER), PaymentController.verifySession);
 
 export const PaymentRoutes = router;

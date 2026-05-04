@@ -31,7 +31,22 @@ const handleWebhook = async (req: Request, res: Response) => {
     }
 };
 
+const verifySession = async (req: Request, res: Response) => {
+    try {
+        const { sessionId } = req.query;
+        const result = await PaymentService.verifySession(sessionId as string);
+        res.status(200).json({
+            success: true,
+            message: "Session verified",
+            data: result
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: "Failed to verify session", error });
+    }
+};
+
 export const PaymentController = {
     createSession,
-    handleWebhook
+    handleWebhook,
+    verifySession
 };

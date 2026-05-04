@@ -10,8 +10,14 @@ const createEvent = async (data: any) => {
 };
 
 const getAllEvents = async (query: any) => {
-    const { searchTerm, category, type, limit, page, organizerId } = query;
+    const { searchTerm, category, type, limit, page, organizerId, status: eventStatus } = query;
     const where: any = {};
+
+    if (eventStatus === 'upcoming') {
+        where.date = { gte: new Date() };
+    } else if (eventStatus === 'past') {
+        where.date = { lt: new Date() };
+    }
 
     if (organizerId) {
         where.organizerId = organizerId;

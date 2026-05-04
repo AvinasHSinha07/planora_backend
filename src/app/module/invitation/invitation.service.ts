@@ -34,10 +34,12 @@ const inviteUser = async (inviterId: string, eventId: string, email: string) => 
         }
     });
 
+    const inviter = await prisma.user.findUnique({ where: { id: inviterId } });
+
     await NotificationService.createNotification(
         invitee.id,
         "New Event Invitation",
-        `You have been invited to "${event.title}" by ${inviterId === event.organizerId ? "the organizer" : "a host"}.`
+        `You have been invited to "${event.title}" by ${inviter?.name}.`
     );
 
     return result;
@@ -106,6 +108,14 @@ const updateInvitationStatus = async (userId: string, invitationId: string, newS
                 status: "APPROVED"
             }
         });
+
+        // Notify Organizer
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        await NotificationService.createNotification(
+            invitation.event.organizerId,
+            "Invitation Accepted",
+            `${user?.name || "A user"} has accepted your invitation for "${invitation.event.title}".`
+        );
     }
 
     return result;
