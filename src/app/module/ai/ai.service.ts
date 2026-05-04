@@ -25,21 +25,25 @@ const fetchSiteContext = async (): Promise<string> => {
   try {
     // Avoid $transaction for simple counts to prevent P2028 (Transaction API error)
     const [events, categories, totalUsers, totalEvents, totalParticipants] = await Promise.all([
-      // Recent and Upcoming events
+      // Recent and Upcoming events with enriched data
       prisma.event.findMany({
         where: { date: { gte: new Date() } },
         select: {
           id: true,
           title: true,
+          description: true,
           date: true,
           venue: true,
           fee: true,
           eventType: true,
+          isFeatured: true,
           category: { select: { name: true } },
           organizer: { select: { name: true } },
+          _count: { select: { participants: true, reviews: true } },
+          reviews: { select: { rating: true }, take: 10 },
         },
-        orderBy: { date: 'asc' },
-        take: 30, // Reduced take to save tokens and time
+        orderBy: [{ isFeatured: 'desc' }, { date: 'asc' }],
+        take: 20, // Focus on the most relevant 20 events to keep prompt concise
       }),
 
       // All categories
@@ -51,19 +55,31 @@ const fetchSiteContext = async (): Promise<string> => {
         orderBy: { name: 'asc' },
       }),
 
-      // Individual counts instead of $transaction
+      // Stats
       prisma.user.count(),
       prisma.event.count(),
       prisma.eventParticipant.count(),
     ]);
 
-    // Format events compactly
+    // Format events with richness
     const eventsContext = events
-      .map(
-        (e: any) =>
-          `• ${e.title} — ${e.fee > 0 ? `$${e.fee}` : 'FREE'} | ${e.eventType.replace('_', ' ')} | Category: ${e.category?.name || 'General'} | Date: ${new Date(e.date).toLocaleDateString()} | Venue: ${e.venue || 'TBA'} | Organizer: ${e.organizer.name}`
-      )
-      .join('\n');
+      .map((e: any) => {
+        const avgRating = e.reviews.length > 0 
+          ? (e.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / e.reviews.length).toFixed(1)
+          : 'No reviews yet';
+        
+        const featuredTag = e.isFeatured ? '[FEATURED] ' : '';
+        const desc = e.description || "No description provided.";
+        const shortDesc = desc.length > 100 ? desc.substring(0, 97) + '...' : desc;
+
+        return `${featuredTag}• ${e.title}
+  - Price: ${e.fee > 0 ? `$${e.fee}` : 'FREE'} | Type: ${e.eventType.replace('_', ' ')}
+  - Category: ${e.category?.name || 'General'} | Date: ${new Date(e.date).toLocaleDateString()}
+  - Venue: ${e.venue || 'TBA'} | Organizer: ${e.organizer.name}
+  - Popularity: ${e._count.participants} participants | Rating: ${avgRating}
+  - About: ${shortDesc}`;
+      })
+      .join('\n\n');
 
     // Format categories
     const categoriesContext = categories
@@ -71,15 +87,22 @@ const fetchSiteContext = async (): Promise<string> => {
       .join('\n');
 
     return `
-=== PLANORA LIVE DATA ===
-PLATFORM STATS: Members: ${totalUsers} | Events: ${totalEvents} | Participants: ${totalParticipants}
+=== PLANORA LIVE INTELLIGENCE ===
+PLATFORM STATS:
+- Members: ${totalUsers}
+- Total Events Hosted: ${totalEvents}
+- Community Participation: ${totalParticipants}
 
 EVENT CATEGORIES:
 ${categoriesContext}
 
-UPCOMING EVENTS:
+TOP UPCOMING & FEATURED EXPERIENCES:
 ${eventsContext}
-=== END OF LIVE DATA ===
+
+PLATFORM MISSION:
+Planora is a premium event ecosystem connecting elite organizers with passionate attendees. 
+We prioritize quality, security, and seamless experiences.
+=== END OF INTELLIGENCE ===
 `;
   } catch (error) {
     console.error('[PlanoraBot] Failed to fetch site context:', error);
@@ -141,7 +164,7 @@ export const getChatResponse = async (
       const result = await model.generateContent({
         contents,
         generationConfig: {
-          maxOutputTokens: 600,
+          maxOutputTokens: 2000,
           temperature: 0.6,
         },
       });
