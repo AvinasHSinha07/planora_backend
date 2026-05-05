@@ -84,9 +84,10 @@ export const auth = betterAuth({
     trustedOrigins: [
         "http://localhost:3000",
         "http://localhost:5000",
-        cleanURL(envVars.CLIENT_URL),
+        ...(envVars.CLIENT_URL?.split(',').map(url => cleanURL(url)) || []),
         cleanURL(envVars.BETTER_AUTH_URL),
     ].filter(Boolean),
+
     advanced: {
         defaultCookieAttributes: {
             sameSite: isProduction ? "none" : "lax",

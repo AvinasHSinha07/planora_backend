@@ -11,7 +11,9 @@ import { PaymentController } from './app/module/payment/payment.controller';
 
 console.log('App.ts loading...');
 const app: Application = express();
+app.set('trust proxy', true);
 const SELF_ASSIGNABLE_ROLES = new Set(['USER', 'ORGANIZER']);
+
 
 // CORS (must be before parsers for preflight OPTIONS handling)
 const envOrigins = process.env.CLIENT_URL?.split(',') || [];
