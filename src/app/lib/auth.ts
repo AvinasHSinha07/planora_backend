@@ -20,8 +20,10 @@ const sessionUpdateAge = Number.isFinite(envVars.BETTER_AUTH_SESSION_TOKEN_UPDAT
     ? envVars.BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE
     : 60 * 60 * 12;
 
+const cleanURL = (url: string | undefined) => url?.trim().replace(/\/$/, "") || "";
+
 export const auth = betterAuth({
-    baseURL: isProduction ? envVars.CLIENT_URL : envVars.BETTER_AUTH_URL,
+    baseURL: cleanURL(isProduction ? envVars.CLIENT_URL : envVars.BETTER_AUTH_URL),
     basePath: "/api/v1/auth",
     secret: envVars.BETTER_AUTH_SECRET,
     account: {
@@ -82,9 +84,9 @@ export const auth = betterAuth({
     trustedOrigins: [
         "http://localhost:3000",
         "http://localhost:5000",
-        ...(envVars.CLIENT_URL ? [envVars.CLIENT_URL, envVars.CLIENT_URL.replace(/\/$/, "")] : []),
-        ...(envVars.BETTER_AUTH_URL ? [envVars.BETTER_AUTH_URL] : []),
-    ],
+        cleanURL(envVars.CLIENT_URL),
+        cleanURL(envVars.BETTER_AUTH_URL),
+    ].filter(Boolean),
     advanced: {
         defaultCookieAttributes: {
             sameSite: isProduction ? "none" : "lax",
