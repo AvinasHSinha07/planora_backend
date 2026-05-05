@@ -23,7 +23,7 @@ const sessionUpdateAge = Number.isFinite(envVars.BETTER_AUTH_SESSION_TOKEN_UPDAT
 const cleanURL = (url: string | undefined) => url?.trim().replace(/\/$/, "") || "";
 
 export const auth = betterAuth({
-    baseURL: cleanURL(isProduction ? envVars.CLIENT_URL : envVars.BETTER_AUTH_URL),
+    baseURL: cleanURL(isProduction ? envVars.CLIENT_URL?.split(',')[0] : envVars.BETTER_AUTH_URL),
     basePath: "/api/v1/auth",
     secret: envVars.BETTER_AUTH_SECRET,
     account: {
